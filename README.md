@@ -24,6 +24,10 @@ No build step or server is required.
 - `recursive-self-improvement-animation.html` - the complete standalone animation
 - `LICENSE` - MIT license
 
+## Links
+
+- [linux.do](https://linux.do)
+
 ## License
 
 MIT
