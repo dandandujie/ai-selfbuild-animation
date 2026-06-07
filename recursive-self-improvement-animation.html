@@ -1,0 +1,1067 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recursive Self-Improvement Animation Variants</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #faf9f5;
+      --panel: rgba(255, 255, 255, 0.72);
+      --panel-border: rgba(75, 67, 55, 0.16);
+      --panel-text: #3d382f;
+      --active-bg: #2f2b25;
+      --active-text: #fffaf1;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: var(--paper);
+    }
+
+    .spark-canvas {
+      position: fixed;
+      inset: 0;
+      display: block;
+      width: 100vw;
+      height: 100svh;
+    }
+
+    .hero-copy {
+      position: fixed;
+      left: 77px;
+      top: calc(50% - 66px);
+      z-index: 1;
+      width: 430px;
+      color: #191817;
+      pointer-events: none;
+    }
+
+    .hero-copy h1 {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", Times, serif;
+      font-size: 78px;
+      font-weight: 400;
+      line-height: 0.96;
+      letter-spacing: 0;
+    }
+
+    .hero-copy p {
+      margin: 22px 0 0;
+      color: #716e67;
+      font-family: Avenir Next, Optima, Candara, Segoe UI, sans-serif;
+      font-size: 17px;
+      font-weight: 500;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    .brand-switcher {
+      position: fixed;
+      right: max(16px, env(safe-area-inset-right));
+      bottom: max(16px, env(safe-area-inset-bottom));
+      z-index: 2;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(92px, 1fr));
+      gap: 6px;
+      max-width: min(236px, calc(100vw - 32px));
+      padding: 8px;
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--panel-text);
+      box-shadow: 0 18px 50px rgba(38, 34, 28, 0.14);
+      font-family: Avenir Next, Optima, Candara, Segoe UI, sans-serif;
+      backdrop-filter: blur(18px) saturate(1.2);
+      -webkit-backdrop-filter: blur(18px) saturate(1.2);
+    }
+
+    .brand-switcher button {
+      appearance: none;
+      min-height: 34px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      font: 650 12px/1 Avenir Next, Optima, Candara, Segoe UI, sans-serif;
+      letter-spacing: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      transition:
+        background-color 180ms ease,
+        color 180ms ease,
+        transform 180ms ease;
+    }
+
+    .brand-switcher button:hover {
+      background: rgba(255, 255, 255, 0.52);
+      transform: translateY(-1px);
+    }
+
+    .brand-switcher button[aria-pressed="true"] {
+      background: var(--active-bg);
+      color: var(--active-text);
+    }
+
+    .brand-switcher button:focus-visible {
+      outline: 2px solid var(--active-bg);
+      outline-offset: 2px;
+    }
+
+    @media (max-width: 991px) {
+      .hero-copy {
+        left: 32px;
+        top: 64px;
+        width: min(430px, calc(100vw - 64px));
+      }
+
+      .hero-copy h1 {
+        font-size: 58px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .hero-copy {
+        left: 20px;
+        top: 34px;
+        width: calc(100vw - 40px);
+      }
+
+      .hero-copy h1 {
+        font-size: 44px;
+        line-height: 0.98;
+      }
+
+      .hero-copy p {
+        margin-top: 14px;
+        max-width: 320px;
+        font-size: 14px;
+      }
+
+      .brand-switcher {
+        left: 12px;
+        right: auto;
+        bottom: max(12px, env(safe-area-inset-bottom));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        width: min(366px, calc(100vw - 24px));
+        max-width: none;
+      }
+
+      .brand-switcher button {
+        min-height: 32px;
+        font-size: 11px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas class="spark-canvas" id="sparkCanvas" aria-hidden="true"></canvas>
+  <section class="hero-copy" aria-label="Recursive self-improvement introduction">
+    <h1>When AI<br>builds itself</h1>
+    <p>Our progress toward recursive self-improvement, and its implications.</p>
+  </section>
+  <nav class="brand-switcher" aria-label="Animation version switcher" id="brandSwitcher"></nav>
+
+  <script>
+    (() => {
+      const canvas = document.getElementById("sparkCanvas");
+      const switcher = document.getElementById("brandSwitcher");
+      const ctx = canvas.getContext("2d", { alpha: true, willReadFrequently: false });
+      const SPARK_PATH = "M18.3658 62.2435L36.7823 51.9165L37.0858 51.012L36.7823 50.5083H35.8716L32.7853 50.3206L22.2616 50.0389L13.1546 49.6634L4.30054 49.194L2.07438 48.7246L0 45.9551L0.202378 44.5938L2.07438 43.3264L4.75589 43.5611L10.6755 43.9836L19.5801 44.5938L26.0056 44.9693L35.568 45.9551H37.0858L37.2882 45.3448L36.7823 44.9693L36.3775 44.5938L27.1693 38.3507L17.2022 31.7789L11.9909 27.9767L9.20822 26.0522L7.79157 24.2684L7.18443 20.3254L9.71416 17.5089L13.1546 17.7436L14.0147 17.9783L17.5057 20.654L24.9431 26.4277L34.6573 33.5627L36.0739 34.7362L36.6444 34.3512L36.7317 34.079L36.0739 32.9994L30.8121 23.4704L25.1961 13.7537L22.6664 9.71675L22.0086 7.32277C21.7539 6.31812 21.6039 5.48695 21.6039 4.45938L24.4878 0.516349L26.1068 0L30.0026 0.516349L31.6216 1.92457L34.0502 7.46359L37.9459 16.1476L44.0173 27.9767L45.7881 31.4973L46.7494 34.7362L47.1036 35.722H47.7107V35.1587L48.2166 28.4931L49.1274 20.3254L50.0381 9.81063L50.3416 6.85336L51.8089 3.28586L54.7434 1.36128L57.0201 2.44092L58.8921 5.11655L58.6391 6.85336L57.5261 14.0822L55.3505 25.395L53.9338 32.9994H54.7434L55.7047 32.0136L59.5498 26.944L65.9753 18.8702L68.8086 15.6782L72.1479 12.1577L74.2729 10.4678H78.3204L81.2549 14.8802L79.9395 19.4335L75.7907 24.6909L72.3503 29.1503L67.4173 35.7593L64.3563 41.0732L64.6308 41.5116L65.3682 41.4487L76.499 39.0548L82.5198 37.9751L89.7042 36.7547L92.9423 38.2568L93.2964 39.8058L92.0316 42.9509L84.3412 44.8285L75.3354 46.6592L61.9245 49.8162L61.776 49.9356L61.9513 50.1956L67.9991 50.743L70.5795 50.8839H76.9038L88.6923 51.7757L91.7786 53.7942L93.6 56.282L93.2964 58.2066L88.5405 60.6006L82.1656 59.0985L67.2402 55.531L62.1302 54.2636H61.4218V54.6861L65.6718 58.8638L73.514 65.9049L83.2787 75.0114L83.7846 77.2646L82.5198 79.0483L81.2043 78.8606L72.6032 72.3827L69.264 69.4724L61.776 63.1354H61.2701V63.7926L62.9903 66.3274L72.1479 80.081L72.6032 84.3057L71.9455 85.667L69.5676 86.5119L66.9872 86.0425L61.5736 78.4851L56.0588 70.0357L51.6065 62.4313L51.0687 62.7708L48.419 91.0652L47.2048 92.5204L44.3715 93.6L41.9935 91.8162L40.7286 88.9059L41.9935 83.1322L43.5114 75.6217L44.7256 69.6602L45.8387 62.2435L46.5185 59.7659L46.4584 59.6001L45.9153 59.6914L40.3239 67.3601L31.824 78.8606L25.0949 86.0425L23.4759 86.6997L20.6932 85.2445L20.9462 82.6628L22.5146 80.3627L31.824 68.5336L37.44 61.1639L41.0595 56.9335L41.0243 56.3216L40.8245 56.3046L16.0891 72.4297L11.6874 72.993L9.76476 71.2092L10.0177 68.2989L10.9284 67.3601L18.3658 62.2435Z";
+      const CHATGPT_PATH = "M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z";
+      const GEMINI_PATH = "M11.04 19.32Q12 21.51 12 24q0-2.49.93-4.68.96-2.19 2.58-3.81t3.81-2.55Q21.51 12 24 12q-2.49 0-4.68-.93a12.3 12.3 0 0 1-3.81-2.58 12.3 12.3 0 0 1-2.58-3.81Q12 2.49 12 0q0 2.49-.96 4.68-.93 2.19-2.55 3.81a12.3 12.3 0 0 1-3.81 2.58Q2.49 12 0 12q2.49 0 4.68.96 2.19.93 3.81 2.55t2.55 3.81";
+      const DEEPSEEK_PATH = "m 82.459682,28.424298 c -0.71392,-0.348516 -1.023098,0.317622 -1.439089,0.657708 -0.143444,0.109679 -0.264122,0.252961 -0.385065,0.382266 -1.045593,1.115853 -2.265433,1.846641 -3.859104,1.759505 -2.330078,-0.129281 -4.320059,0.601494 -6.079562,2.38348 -0.373849,-2.197975 -1.616167,-3.507763 -3.504954,-4.350978 -0.989372,-0.438471 -1.989987,-0.87413 -2.684235,-1.826957 -0.483434,-0.677385 -0.615548,-1.433467 -0.85726,-2.17549 -0.154604,-0.449712 -0.309188,-0.907857 -0.823542,-0.983752 -0.562142,-0.08717 -0.781378,0.38227 -1.000609,0.775758 -0.879754,1.607726 -1.219845,3.378474 -1.186124,5.171701 0.07586,4.036183 1.779179,7.251634 5.166087,9.536738 0.385064,0.261371 0.483447,0.525602 0.362583,0.907867 -0.230504,0.786996 -0.505924,1.551506 -0.74765,2.341313 -0.154553,0.503118 -0.385065,0.609935 -0.924725,0.393509 a 15.53198,15.53198 0 0 1 -4.8794,-3.316656 c -2.408772,-2.327266 -4.584249,-4.896256 -7.299399,-6.908725 a 31.943715,31.943715 0 0 0 -1.936576,-1.323842 c -2.768549,-2.689855 0.365374,-4.899069 1.090557,-5.160463 0.758881,-0.275426 0.261427,-1.21423 -2.189548,-1.202979 -2.450947,0.01121 -4.693886,0.829156 -7.552377,1.922517 a 8.5867167,8.5867167 0 0 1 -1.306983,0.385068 26.974378,26.974378 0 0 0 -8.103273,-0.286712 c -5.298182,0.590251 -9.528302,3.097398 -12.639759,7.372493 -3.738246,5.13798 -4.617997,10.978632 -3.541486,17.066626 1.132706,6.41965 4.409994,11.734718 9.443973,15.888944 5.222298,4.308821 11.234403,6.419656 18.095346,6.014914 4.165477,-0.238895 8.805952,-0.798238 14.036683,-5.227914 1.321043,0.657702 2.703902,0.9191 5.003066,1.115849 1.770741,0.165894 3.474032,-0.08436 4.792262,-0.359742 2.065864,-0.438484 1.922517,-2.352578 1.177686,-2.701102 -6.057084,-2.82195 -4.727615,-1.672374 -5.939024,-2.602712 3.080532,-3.642686 7.718204,-7.425887 9.533916,-19.683401 0.140604,-0.97531 0.02097,-1.588046 0,-2.375053 -0.0097,-0.477816 0.09837,-0.66614 0.646464,-0.71954 a 11.729089,11.729089 0 0 0 4.342549,-1.335092 c 3.923748,-2.14457 5.508988,-5.663582 5.882822,-9.885262 0.05621,-0.646456 -0.01088,-1.312596 -0.69425,-1.652697 z m -34.1979,37.995175 c -5.871574,-4.615194 -8.718825,-6.135778 -9.893701,-6.071136 -1.101802,0.06743 -0.902236,1.323838 -0.660515,2.144568 0.252962,0.80948 0.581821,1.366008 1.042768,2.077115 0.320423,0.469381 0.539664,1.169257 -0.317625,1.694865 -1.891598,1.169252 -5.177323,-0.393502 -5.33191,-0.469396 -3.825379,-2.254193 -7.026777,-5.227912 -9.27815,-9.295012 -2.175493,-3.915328 -3.440313,-8.11452 -3.648304,-12.597606 -0.05622,-1.084933 0.261368,-1.467189 1.340711,-1.663936 a 13.199091,13.199091 0 0 1 4.297568,-0.109623 c 5.992441,0.876933 11.091065,3.555542 15.368959,7.796906 2.439703,2.417212 4.286336,5.303802 6.189187,8.125759 2.023712,2.996223 4.199197,5.851893 6.970559,8.190404 0.97813,0.820741 1.756697,1.444716 2.504344,1.902849 -2.254195,0.253017 -6.01492,0.309187 -8.583906,-1.72577 z m 2.810705,-18.100968 a 0.86007694,0.86007694 0 0 1 1.16645,-0.806679 0.84883414,0.84883413 0 0 1 0.56213,0.809488 0.86007694,0.86007694 0 0 1 -0.871314,0.862887 0.85164499,0.85164499 0 0 1 -0.854457,-0.865696 z m 8.741312,4.485892 c -0.562145,0.227667 -1.121472,0.42441 -1.658322,0.449707 A 3.4993328,3.4993328 0 0 1 55.912523,52.540182 C 55.142397,51.89372 54.591498,51.533946 54.361017,50.409667 a 4.8625276,4.8625276 0 0 1 0.0449,-1.652699 c 0.196737,-0.919099 -0.02351,-1.509351 -0.671747,-2.043381 -0.525598,-0.438468 -1.197362,-0.55932 -1.933772,-0.55932 a 1.5711865,1.5711865 0 0 1 -0.713911,-0.219232 c -0.309127,-0.151731 -0.562145,-0.534026 -0.320461,-1.006229 0.07857,-0.151745 0.449719,-0.522794 0.539652,-0.590247 1.000622,-0.567761 2.155815,-0.382274 3.221081,0.0449 0.98937,0.40474 1.73702,1.146769 2.813526,2.197973 1.098983,1.267628 1.298547,1.61897 1.925331,2.568982 0.494679,0.744844 0.944395,1.509358 1.250759,2.383493 0.188307,0.548083 -0.05341,0.994996 -0.702666,1.27044 z";
+      const KIMI_PATHS = [
+        "M21.846 0a1.923 1.923 0 110 3.846H20.15a.226.226 0 01-.227-.226V1.923C19.923.861 20.784 0 21.846 0z",
+        "M11.065 11.199l7.257-7.2c.137-.136.06-.41-.116-.41H14.3a.164.164 0 00-.117.051l-7.82 7.756c-.122.12-.302.013-.302-.179V3.82c0-.127-.083-.23-.185-.23H3.186c-.103 0-.186.103-.186.23V19.77c0 .128.083.23.186.23h2.69c.103 0 .186-.102.186-.23v-3.25c0-.069.025-.135.069-.178l2.424-2.406a.158.158 0 01.205-.023l6.484 4.772a7.677 7.677 0 003.453 1.283c.108.012.2-.095.2-.23v-3.06c0-.117-.07-.212-.164-.227a5.028 5.028 0 01-2.027-.807l-5.613-4.064c-.117-.078-.132-.279-.028-.381z",
+      ];
+      const ZAI_PATH = "M12.105 2L9.927 4.953H.653L2.83 2h9.276zM23.254 19.048L21.078 22h-9.242l2.174-2.952h9.244zM24 2L9.264 22H0L14.736 2H24z";
+      const GROK_PATH = "M9.27 15.29l7.978-5.897c.391-.29.95-.177 1.137.272.98 2.369.542 5.215-1.41 7.169-1.951 1.954-4.667 2.382-7.149 1.406l-2.711 1.257c3.889 2.661 8.611 2.003 11.562-.953 2.341-2.344 3.066-5.539 2.388-8.42l.006.007c-.983-4.232.242-5.924 2.75-9.383.06-.082.12-.164.179-.248l-3.301 3.305v-.01L9.267 15.292M7.623 16.723c-2.792-2.67-2.31-6.801.071-9.184 1.761-1.763 4.647-2.483 7.166-1.425l2.705-1.25a7.808 7.808 0 00-1.829-1A8.975 8.975 0 005.984 5.83c-2.533 2.536-3.33 6.436-1.962 9.764 1.022 2.487-.653 4.246-2.34 6.022-.599.63-1.199 1.259-1.682 1.925l7.62-6.815";
+      const MINIMAX_PATH = "M16.278 2c1.156 0 2.093.927 2.093 2.07v12.501a.74.74 0 00.744.709.74.74 0 00.743-.709V9.099a2.06 2.06 0 012.071-2.049A2.06 2.06 0 0124 9.1v6.561a.649.649 0 01-.652.645.649.649 0 01-.653-.645V9.1a.762.762 0 00-.766-.758.762.762 0 00-.766.758v7.472a2.037 2.037 0 01-2.048 2.026 2.037 2.037 0 01-2.048-2.026v-12.5a.785.785 0 00-.788-.753.785.785 0 00-.789.752l-.001 15.904A2.037 2.037 0 0113.441 22a2.037 2.037 0 01-2.048-2.026V18.04c0-.356.292-.645.652-.645.36 0 .652.289.652.645v1.934c0 .263.142.506.372.638.23.131.514.131.744 0a.734.734 0 00.372-.638V4.07c0-1.143.937-2.07 2.093-2.07zm-5.674 0c1.156 0 2.093.927 2.093 2.07v11.523a.648.648 0 01-.652.645.648.648 0 01-.652-.645V4.07a.785.785 0 00-.789-.78.785.785 0 00-.789.78v14.013a2.06 2.06 0 01-2.07 2.048 2.06 2.06 0 01-2.071-2.048V9.1a.762.762 0 00-.766-.758.762.762 0 00-.766.758v3.8a2.06 2.06 0 01-2.071 2.049A2.06 2.06 0 010 12.9v-1.378c0-.357.292-.646.652-.646.36 0 .653.29.653.646V12.9c0 .418.343.757.766.757s.766-.339.766-.757V9.099a2.06 2.06 0 012.07-2.048 2.06 2.06 0 012.071 2.048v8.984c0 .419.343.758.767.758.423 0 .766-.339.766-.758V4.07c0-1.143.937-2.07 2.093-2.07z";
+      const ICONS = {
+        anthropic: { paths: [SPARK_PATH], viewBox: 94, padding: 0, strokeCut: 3.8 },
+        chatgpt: { paths: [CHATGPT_PATH], viewBox: 24, padding: 2 },
+        gemini: { paths: [GEMINI_PATH], viewBox: 24, padding: 4 },
+        deepseek: { paths: [DEEPSEEK_PATH], viewBox: 96, padding: 1 },
+        kimi: { paths: KIMI_PATHS, viewBox: 24, padding: 8, offsetY: 4, fillRule: "evenodd" },
+        glm: { paths: [ZAI_PATH], viewBox: 24, padding: 3, fillRule: "evenodd" },
+        grok: { paths: [GROK_PATH], viewBox: 24, padding: 5, fillRule: "evenodd" },
+        minimax: { paths: [MINIMAX_PATH], viewBox: 24, padding: 0, fillRule: "nonzero" },
+      };
+      const THEMES = [
+        {
+          id: "anthropic",
+          label: "Anthropic",
+          symbol: "anthropic",
+          seed: 0xc1a0de,
+          paper: "#faf9f5",
+          grid: "#c9c6bc",
+          panel: "rgba(255, 252, 245, 0.72)",
+          panelBorder: "rgba(75, 67, 55, 0.16)",
+          panelText: "#3d382f",
+          activeBg: "#2f2b25",
+          activeText: "#fffaf1",
+          tileColors: ["#D97757", "#E08B6E", "#DD8263", "#E29478", "#D17A60", "#E6A085"],
+          solidColors: ["#CE6C4C", "#C9694C", "#D17052", "#CB6B4E"],
+        },
+        {
+          id: "chatgpt",
+          label: "ChatGPT",
+          symbol: "chatgpt",
+          seed: 0x0a17c9,
+          paper: "#f5f7f3",
+          grid: "#b8c8bf",
+          panel: "rgba(245, 251, 247, 0.74)",
+          panelBorder: "rgba(20, 93, 72, 0.18)",
+          panelText: "#153b32",
+          activeBg: "#0a6b58",
+          activeText: "#f5fffb",
+          tileColors: ["#0B8F79", "#10A37F", "#34B89A", "#6CCBB4", "#1F7A68", "#DDEEE8"],
+          solidColors: ["#0A6B58", "#0E806A", "#14A083", "#1E6F60"],
+        },
+        {
+          id: "gemini",
+          label: "Gemini",
+          symbol: "gemini",
+          seed: 0x6e41f2,
+          paper: "#f8faff",
+          grid: "#b9c6dc",
+          panel: "rgba(248, 251, 255, 0.76)",
+          panelBorder: "rgba(43, 89, 197, 0.17)",
+          panelText: "#16315f",
+          activeBg: "#275de8",
+          activeText: "#ffffff",
+          tileColors: ["#4285F4", "#34A853", "#FBBC04", "#EA4335", "#8E63FF", "#62C7FF"],
+          solidColors: ["#275DE8", "#5E6DF6", "#0F9D78", "#D54E3D"],
+        },
+        {
+          id: "deepseek",
+          label: "DeepSeek",
+          symbol: "deepseek",
+          seed: 0xd335ee,
+          paper: "#f2f8ff",
+          grid: "#b5c6ee",
+          panel: "rgba(240, 248, 255, 0.76)",
+          panelBorder: "rgba(77, 107, 254, 0.17)",
+          panelText: "#23336f",
+          activeBg: "#4d6bfe",
+          activeText: "#f7fbff",
+          tileColors: ["#4D6BFE", "#6C83FF", "#8EA0FF", "#2F54E8", "#61B2FF", "#DCE4FF"],
+          solidColors: ["#4D6BFE", "#3657E3", "#607BFF", "#2F46B7"],
+        },
+        {
+          id: "kimi",
+          label: "Kimi",
+          symbol: "kimi",
+          seed: 0x71c1ee,
+          paper: "#f4f6ff",
+          grid: "#b9c0df",
+          panel: "rgba(246, 247, 255, 0.76)",
+          panelBorder: "rgba(56, 69, 150, 0.17)",
+          panelText: "#17396f",
+          activeBg: "#1783ff",
+          activeText: "#ffffff",
+          tileColors: ["#1783FF", "#3B98FF", "#7DBBFF", "#0A62CF", "#61A8FF", "#E4F1FF"],
+          solidColors: ["#1783FF", "#0D73E8", "#3798FF", "#195CB7"],
+        },
+        {
+          id: "glm",
+          label: "GLM",
+          symbol: "glm",
+          seed: 0x91a1f4,
+          paper: "#f5f8ff",
+          grid: "#b6c4ea",
+          panel: "rgba(246, 249, 255, 0.76)",
+          panelBorder: "rgba(0, 57, 198, 0.17)",
+          panelText: "#17306f",
+          activeBg: "#0039c6",
+          activeText: "#ffffff",
+          tileColors: ["#0039C6", "#1557E6", "#3A7BFF", "#6EA0FF", "#0B2D8D", "#DCE7FF"],
+          solidColors: ["#0039C6", "#1557E6", "#0B2D8D", "#2E6BFF"],
+        },
+        {
+          id: "minimax",
+          label: "MiniMax",
+          symbol: "minimax",
+          seed: 0x51a1f0,
+          paper: "#fff7f8",
+          grid: "#e6b7c0",
+          panel: "rgba(255, 248, 249, 0.76)",
+          panelBorder: "rgba(231, 53, 98, 0.17)",
+          panelText: "#6c1830",
+          activeBg: "#e73562",
+          activeText: "#ffffff",
+          tileColors: ["#E73562", "#FE603C", "#E2167E", "#FF8A6B", "#C91852", "#FFE1E4"],
+          solidColors: ["#E73562", "#FE603C", "#D91C70", "#B91547"],
+        },
+        {
+          id: "grok",
+          label: "Grok",
+          symbol: "grok",
+          seed: 0x970cc9,
+          paper: "#f6f5f1",
+          grid: "#bdbab0",
+          panel: "rgba(248, 247, 241, 0.74)",
+          panelBorder: "rgba(23, 23, 21, 0.15)",
+          panelText: "#20201d",
+          activeBg: "#161615",
+          activeText: "#f8f6ee",
+          tileColors: ["#171717", "#2F3030", "#51545A", "#81858B", "#BFC3C6", "#F0EEE5"],
+          solidColors: ["#171717", "#292B2C", "#4A4D51", "#6D7176"],
+        },
+      ];
+      const state = {
+        running: true,
+        width: 0,
+        height: 0,
+        dpr: 1,
+        baseScale: 1,
+        centerX: 0,
+        centerY: 0,
+        cycle: 0,
+        phaseCycles: 3,
+        cells: new Map(),
+        agents: [],
+        lastTick: 0,
+        startedAt: 0,
+        doneAt: 0,
+        ticks: 0,
+        zoom: 0,
+        zoomVelocity: 0,
+        lastFrameTime: 0,
+        raf: 0,
+      };
+
+      let activeTheme = THEMES[0];
+      let palette = {
+        paper: activeTheme.paper,
+        grid: activeTheme.grid,
+      };
+      let shapeCells = [];
+      let shapeSet = new Set();
+      let totalReachable = 0;
+      let growthSeeds = [180];
+      let random = mulberry32(activeTheme.seed);
+      let textures = [];
+      let tileSprites = [];
+      let agentSprite = null;
+      const zoomSpan = Math.log(19 / 0.78);
+
+      function mulberry32(seed) {
+        return function random() {
+          seed |= 0;
+          seed = seed + 0x6d2b79f5 | 0;
+          let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+          t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+          return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        };
+      }
+
+      function clamp(value, min = 0, max = 1) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function easeOutCubic(value) {
+        return 1 - Math.pow(1 - clamp(value), 3);
+      }
+
+      function makeCanvas(size) {
+        const item = document.createElement("canvas");
+        item.width = size;
+        item.height = size;
+        return item;
+      }
+
+      function roundedPath(context, x, y, width, height, radius) {
+        const r = Math.min(radius, width / 2, height / 2);
+        context.beginPath();
+        context.moveTo(x + r, y);
+        context.lineTo(x + width - r, y);
+        context.quadraticCurveTo(x + width, y, x + width, y + r);
+        context.lineTo(x + width, y + height - r);
+        context.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+        context.lineTo(x + r, y + height);
+        context.quadraticCurveTo(x, y + height, x, y + height - r);
+        context.lineTo(x, y + r);
+        context.quadraticCurveTo(x, y, x + r, y);
+        context.closePath();
+      }
+
+      function drawSymbolMask(context, symbol) {
+        const icon = ICONS[symbol] || ICONS.anthropic;
+        if (icon.appIcon) {
+          const cutoutPadding = icon.cutoutPadding || 0;
+          const cutoutScale = (152 - 2 * cutoutPadding) / icon.viewBox;
+          const cutoutMatrix = new DOMMatrix()
+            .translate(cutoutPadding + (icon.cutoutOffsetX || 0), cutoutPadding + (icon.cutoutOffsetY || 0))
+            .scale(cutoutScale, cutoutScale);
+
+          context.save();
+          context.fillStyle = "#000";
+          roundedPath(context, 0, 0, 152, 152, icon.radius || 28);
+          context.fill();
+          context.globalCompositeOperation = "destination-out";
+          for (const pathData of icon.cutoutPaths) {
+            const path = new Path2D(pathData);
+            const transformed = new Path2D();
+            transformed.addPath(path, cutoutMatrix);
+            context.fill(transformed, icon.cutoutFillRule || "nonzero");
+          }
+          context.restore();
+          return;
+        }
+
+        const padding = icon.padding || 0;
+        const scale = (152 - 2 * padding) / icon.viewBox;
+        const matrix = new DOMMatrix()
+          .translate(padding + (icon.offsetX || 0), padding + (icon.offsetY || 0))
+          .scale(scale, scale);
+        const paths = icon.paths.map((pathData) => {
+          const path = new Path2D(pathData);
+          const transformed = new Path2D();
+          transformed.addPath(path, matrix);
+          return transformed;
+        });
+
+        context.save();
+        context.fillStyle = "#000";
+        context.strokeStyle = "#000";
+        context.lineCap = "round";
+        context.lineJoin = "round";
+        for (const path of paths) {
+          context.fill(path, icon.fillRule || "nonzero");
+        }
+        if (icon.strokeCut) {
+          context.globalCompositeOperation = "destination-out";
+          context.lineWidth = icon.strokeCut;
+          for (const path of paths) {
+            context.stroke(path);
+          }
+        }
+        context.restore();
+      }
+
+      function buildShapeCells(theme) {
+        const mask = makeCanvas(152);
+        const maskContext = mask.getContext("2d", { willReadFrequently: true });
+        drawSymbolMask(maskContext, theme.symbol);
+
+        const pixels = maskContext.getImageData(0, 0, 152, 152).data;
+        const cells = [];
+        for (let row = 0; row < 19; row += 1) {
+          for (let col = 0; col < 19; col += 1) {
+            let filled = 0;
+            for (let py = 0; py < 8; py += 1) {
+              for (let px = 0; px < 8; px += 1) {
+                const alpha = pixels[((row * 8 + py) * 152 + (col * 8 + px)) * 4 + 3];
+                if (alpha > 8) filled += 1;
+              }
+            }
+            if (filled >= 11.52) {
+              const dx = col - 9;
+              const dy = row - 9;
+              cells.push({ idx: row * 19 + col, gx: col, gy: row, dist: Math.hypot(dx, dy) });
+            }
+          }
+        }
+        if (!cells.length) {
+          cells.push({ idx: 180, gx: 9, gy: 9, dist: 0 });
+        }
+        cells.sort((a, b) => a.dist - b.dist || a.idx - b.idx);
+        return cells;
+      }
+
+      function centeredComponentSeed(component) {
+        let best = component[0];
+        let bestScore = Infinity;
+        for (const idx of component) {
+          const dx = idx % 19 - 9;
+          const dy = Math.floor(idx / 19) - 9;
+          const score = Math.hypot(dx, dy);
+          if (score < bestScore) {
+            best = idx;
+            bestScore = score;
+          }
+        }
+        return best;
+      }
+
+      function computeGrowthSeeds() {
+        const visited = new Set();
+        const components = [];
+        for (const cell of shapeCells) {
+          if (visited.has(cell.idx)) continue;
+          const component = [];
+          const queue = [cell.idx];
+          visited.add(cell.idx);
+          for (let head = 0; head < queue.length; head += 1) {
+            const idx = queue[head];
+            component.push(idx);
+            for (const next of neighbors(idx)) {
+              if (!visited.has(next)) {
+                visited.add(next);
+                queue.push(next);
+              }
+            }
+          }
+          components.push(component);
+        }
+        components.sort((a, b) => b.length - a.length);
+        return components.map(centeredComponentSeed);
+      }
+
+      function computeTotalReachable(seeds) {
+        const seen = new Set();
+        const queue = [];
+        for (const seed of seeds) {
+          if (shapeSet.has(seed) && !seen.has(seed)) {
+            seen.add(seed);
+            queue.push(seed);
+          }
+        }
+        for (let head = 0; head < queue.length; head += 1) {
+          for (const next of neighbors(queue[head])) {
+            if (!seen.has(next)) {
+              seen.add(next);
+              queue.push(next);
+            }
+          }
+        }
+        return seen.size || shapeCells.length;
+      }
+
+      function setDocumentTheme() {
+        palette = {
+          paper: activeTheme.paper,
+          grid: activeTheme.grid,
+        };
+        document.documentElement.style.setProperty("--paper", activeTheme.paper);
+        document.documentElement.style.setProperty("--panel", activeTheme.panel);
+        document.documentElement.style.setProperty("--panel-border", activeTheme.panelBorder);
+        document.documentElement.style.setProperty("--panel-text", activeTheme.panelText);
+        document.documentElement.style.setProperty("--active-bg", activeTheme.activeBg);
+        document.documentElement.style.setProperty("--active-text", activeTheme.activeText);
+      }
+
+      function rebuildThemeAssets() {
+        random = mulberry32(activeTheme.seed);
+        shapeCells = buildShapeCells(activeTheme);
+        shapeSet = new Set(shapeCells.map((cell) => cell.idx));
+        growthSeeds = computeGrowthSeeds();
+        totalReachable = computeTotalReachable(growthSeeds);
+        textures = Array.from({ length: 12 }, (_, index) => makeTexture(index + 1));
+        tileSprites = Array.from({ length: 8 }, (_, index) => makeTileSet(index + 1));
+        agentSprite = makeMipMaps(makeGridSprite(608, shapeCells, shapeCells.length, 199));
+      }
+
+      function updateSwitcher() {
+        for (const button of switcher.querySelectorAll("button")) {
+          button.setAttribute("aria-pressed", String(button.dataset.theme === activeTheme.id));
+        }
+      }
+
+      function applyTheme(themeId, restart = true) {
+        const nextTheme = THEMES.find((theme) => theme.id === themeId);
+        if (!nextTheme) return;
+        activeTheme = nextTheme;
+        setDocumentTheme();
+        rebuildThemeAssets();
+        updateSwitcher();
+        if (restart) {
+          const now = performance.now();
+          resetAnimation(now, false, true);
+          draw(now);
+        }
+      }
+
+      function renderSwitcher() {
+        for (const theme of THEMES) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.dataset.theme = theme.id;
+          button.textContent = theme.label;
+          button.setAttribute("aria-pressed", "false");
+          button.addEventListener("click", () => applyTheme(theme.id));
+          switcher.append(button);
+        }
+        updateSwitcher();
+      }
+
+      function neighbors(idx) {
+        const col = idx % 19;
+        const row = Math.floor(idx / 19);
+        const result = [];
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const nextCol = col + dx;
+          const nextRow = row + dy;
+          const next = nextRow * 19 + nextCol;
+          if (nextCol >= 0 && nextRow >= 0 && nextCol < 19 && nextRow < 19 && shapeSet.has(next)) {
+            result.push(next);
+          }
+        }
+        return result;
+      }
+
+      function makeTexture(seed) {
+        const rand = mulberry32(9301 * seed + 49297);
+        const tileColors = activeTheme.tileColors;
+        const tile = makeCanvas(128);
+        const tileContext = tile.getContext("2d");
+        tileContext.globalAlpha = 0.9;
+        tileContext.fillStyle = tileColors[Math.floor(rand() * tileColors.length)];
+        tileContext.fillRect(0, 0, 128, 128);
+
+        for (let i = 0; i < 5; i += 1) {
+          const x = 128 * rand();
+          const y = 128 * rand();
+          const radius = 128 * (0.25 + 0.35 * rand());
+          const gradient = tileContext.createRadialGradient(x, y, 0, x, y, radius);
+          gradient.addColorStop(0, tileColors[Math.floor(rand() * tileColors.length)]);
+          gradient.addColorStop(1, "rgba(0,0,0,0)");
+          tileContext.globalAlpha = 0.14 + 0.14 * rand();
+          tileContext.fillStyle = gradient;
+          tileContext.fillRect(0, 0, 128, 128);
+        }
+
+        tileContext.globalAlpha = 0.07;
+        for (let i = 0; i < 220; i += 1) {
+          const size = 1 + 2 * rand();
+          tileContext.fillStyle = tileColors[Math.floor(rand() * tileColors.length)];
+          tileContext.fillRect(128 * rand(), 128 * rand(), size, size);
+        }
+
+        tileContext.globalAlpha = 0.14;
+        tileContext.strokeStyle = activeTheme.solidColors[0];
+        tileContext.lineWidth = 6.4;
+        tileContext.shadowColor = activeTheme.solidColors[0];
+        tileContext.shadowBlur = 12.8;
+        roundedPath(tileContext, 8.96, 8.96, 110.08, 110.08, 25.6);
+        tileContext.stroke();
+        tileContext.shadowBlur = 0;
+        tileContext.globalAlpha = 1;
+
+        tileContext.globalCompositeOperation = "destination-in";
+        tileContext.fillStyle = "#000";
+        tileContext.beginPath();
+        const wobbleA = rand() * Math.PI * 2;
+        const wobbleB = rand() * Math.PI * 2;
+        const wobbleC = rand() * Math.PI * 2;
+        for (let step = 0; step <= 56; step += 1) {
+          const angle = step / 56 * Math.PI * 2;
+          const cos = Math.cos(angle);
+          const sin = Math.sin(angle);
+          const squareRadius = 1 / Math.pow(cos ** 4 + sin ** 4, 0.25);
+          const radius = squareRadius * 58.88 * (1 + 0.03 * Math.sin(3 * angle + wobbleA) + 0.018 * Math.sin(7 * angle + wobbleB) + 0.01 * Math.sin(11 * angle + wobbleC));
+          const x = 64 + cos * radius;
+          const y = 64 + sin * radius;
+          if (step === 0) tileContext.moveTo(x, y);
+          else tileContext.lineTo(x, y);
+        }
+        tileContext.closePath();
+        tileContext.fill();
+        tileContext.globalCompositeOperation = "source-over";
+        return tile;
+      }
+
+      function makeMipMaps(source) {
+        const levels = [source];
+        let current = source;
+        while (current.width > 38) {
+          const nextSize = Math.max(19, current.width >> 1);
+          const next = makeCanvas(nextSize);
+          const nextContext = next.getContext("2d");
+          nextContext.imageSmoothingEnabled = true;
+          nextContext.imageSmoothingQuality = "high";
+          nextContext.drawImage(current, 0, 0, nextSize, nextSize);
+          levels.push(next);
+          current = next;
+        }
+        return levels;
+      }
+
+      function pickMipMap(levels, size) {
+        for (let i = levels.length - 1; i >= 0; i -= 1) {
+          if (levels[i].width >= size) return levels[i];
+        }
+        return levels[0];
+      }
+
+      function drawTexture(context, x, y, size, seed) {
+        const texture = textures[seed % textures.length];
+        context.save();
+        context.translate(x + size / 2, y + size / 2);
+        context.scale((seed >> 4) & 1 ? -1 : 1, (seed >> 5) & 1 ? -1 : 1);
+        context.drawImage(texture, -size / 2, -size / 2, size, size);
+        context.restore();
+      }
+
+      function makeGridOrder(seed) {
+        const rand = mulberry32(0x9e3779b1 * seed >>> 0);
+        const index = (x, y) => 19 * y + x;
+        const added = new Set();
+        const cells = [];
+        const frontier = [];
+        const add = (x, y) => {
+          const idx = index(x, y);
+          if (added.has(idx)) return false;
+          added.add(idx);
+          cells.push({ gx: x, gy: y });
+          return true;
+        };
+        const addFrontier = (x, y) => {
+          for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+            const nextX = x + dx;
+            const nextY = y + dy;
+            if (nextX >= 0 && nextY >= 0 && nextX < 19 && nextY < 19 && !added.has(index(nextX, nextY))) {
+              frontier.push({ gx: nextX, gy: nextY });
+            }
+          }
+        };
+
+        add(9, 9);
+        for (let arm = 0; arm < 5 + Math.floor(3 * rand()); arm += 1) {
+          let x = 9;
+          let y = 9;
+          for (let step = 0; step < 38; step += 1) {
+            const options = [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([dx, dy]) => {
+              const nextX = x + dx;
+              const nextY = y + dy;
+              return nextX >= 0 && nextY >= 0 && nextX < 19 && nextY < 19 && !added.has(index(nextX, nextY));
+            });
+            if (!options.length) break;
+            let chosen = options[0];
+            let score = -Infinity;
+            for (const option of options) {
+              const optionScore = Math.hypot(x + option[0] - 9, y + option[1] - 9) + 1.2 * rand();
+              if (optionScore > score) {
+                score = optionScore;
+                chosen = option;
+              }
+            }
+            x += chosen[0];
+            y += chosen[1];
+            add(x, y);
+            if (x === 0 || y === 0 || x === 18 || y === 18) break;
+          }
+        }
+
+        for (const cell of cells) addFrontier(cell.gx, cell.gy);
+        while (cells.length < 361 && frontier.length) {
+          const picked = Math.floor(rand() * frontier.length);
+          const next = frontier[picked];
+          frontier[picked] = frontier[frontier.length - 1];
+          frontier.pop();
+          if (next && add(next.gx, next.gy)) addFrontier(next.gx, next.gy);
+        }
+        return cells;
+      }
+
+      function makeGridSprite(size, order, count, seed) {
+        const sprite = makeCanvas(size);
+        const spriteContext = sprite.getContext("2d");
+        const gap = size / 19;
+        const tileSize = 0.78 * gap;
+        const offset = (gap - tileSize) / 2;
+        for (let i = 0; i < count && i < order.length; i += 1) {
+          const cell = order[i];
+          const textureSeed = (0x466f45d * cell.gx ^ 0x127409f * cell.gy ^ 0x4f9ffb7 * seed) >>> 0;
+          drawTexture(spriteContext, cell.gx * gap + offset, cell.gy * gap + offset, tileSize, textureSeed);
+        }
+        spriteContext.globalCompositeOperation = "destination-in";
+        spriteContext.fillStyle = "#000";
+        roundedPath(spriteContext, 0, 0, size, size, 0.18 * size);
+        spriteContext.fill();
+        return sprite;
+      }
+
+      function makeSolidTile(seed) {
+        const rand = mulberry32(0x165667b1 * seed >>> 0);
+        const solidColors = activeTheme.solidColors;
+        const tile = makeCanvas(152);
+        const tileContext = tile.getContext("2d");
+        roundedPath(tileContext, 0, 0, 152, 152, 27.36);
+        tileContext.fillStyle = solidColors[seed % solidColors.length];
+        tileContext.fill();
+        tileContext.save();
+        tileContext.clip();
+        for (let i = 0; i < 4; i += 1) {
+          const x = 152 * rand();
+          const y = 152 * rand();
+          const radius = 152 * (0.35 + 0.35 * rand());
+          const gradient = tileContext.createRadialGradient(x, y, 0, x, y, radius);
+          gradient.addColorStop(0, solidColors[Math.floor(rand() * solidColors.length)]);
+          gradient.addColorStop(1, "rgba(0,0,0,0)");
+          tileContext.globalAlpha = 0.22;
+          tileContext.fillStyle = gradient;
+          tileContext.fillRect(0, 0, 152, 152);
+        }
+        tileContext.restore();
+        tileContext.globalAlpha = 1;
+        return tile;
+      }
+
+      function makeTileSet(seed) {
+        const order = makeGridOrder(seed);
+        return {
+          full: makeMipMaps(makeGridSprite(608, order, 361, seed)),
+          flip: Array.from({ length: 8 }, (_, frame) => makeGridSprite(152, order, Math.ceil((frame + 1) / 8 * 361), seed)),
+          solid: makeSolidTile(seed),
+        };
+      }
+
+      function resetAnimation(time, final = false, restart = true) {
+        if (restart) {
+          random = mulberry32(activeTheme.seed);
+          state.cycle = final ? state.phaseCycles - 1 : 0;
+          state.zoom = (state.cycle + (final ? 0.3 : -0.04)) * zoomSpan;
+          state.zoomVelocity = 0;
+        }
+        state.cells = new Map();
+        state.agents = [];
+        state.startedAt = time;
+        state.lastTick = time;
+        state.doneAt = 0;
+        state.ticks = 0;
+        state.lastFrameTime = time;
+        if (final) {
+          for (const cell of shapeCells) state.cells.set(cell.idx, time - 2400);
+          state.doneAt = time;
+        } else {
+          for (const seed of growthSeeds) {
+            spawnAgent(seed, time, true);
+          }
+        }
+      }
+
+      function spawnAgent(idx, time, instant = false) {
+        state.agents.push({ idx, prev: idx, since: time, bornAt: instant ? -Infinity : time, dieAt: 0 });
+      }
+
+      function frontierCells(liveSet) {
+        const frontier = [];
+        const seen = new Set();
+        for (const idx of state.cells.keys()) {
+          for (const next of neighbors(idx)) {
+            if (!state.cells.has(next) && !liveSet.has(next) && !seen.has(next)) {
+              seen.add(next);
+              frontier.push(next);
+            }
+          }
+        }
+        return frontier;
+      }
+
+      function advanceGrowth(time) {
+        if (state.doneAt) return;
+        while (time - state.lastTick >= 450) {
+          state.lastTick += 450;
+          state.ticks += 1;
+          const tickTime = state.lastTick;
+          const liveSet = new Set(state.agents.filter((agent) => !agent.dieAt).map((agent) => agent.idx));
+          const nextAgents = [];
+
+          for (const agent of state.agents) {
+            if (agent.dieAt) {
+              if (tickTime - agent.dieAt < 350) nextAgents.push(agent);
+              continue;
+            }
+
+            const options = neighbors(agent.idx).filter((idx) => !state.cells.has(idx) && !liveSet.has(idx));
+            state.cells.set(agent.idx, tickTime);
+            if (!options.length) {
+              agent.dieAt = tickTime;
+              nextAgents.push(agent);
+              continue;
+            }
+
+            const next = options[Math.floor(random() * options.length)];
+            agent.prev = agent.idx;
+            agent.idx = next;
+            agent.since = tickTime;
+            liveSet.add(next);
+            nextAgents.push(agent);
+          }
+
+          state.agents = nextAgents;
+          const active = state.agents.filter((agent) => !agent.dieAt).length;
+          const frontier = frontierCells(liveSet);
+          const phaseCycle = state.cycle % state.phaseCycles;
+          const speed = 7 / (1 + 0.25 * phaseCycle);
+          const targetAgents = Math.min(48, Math.max(1, Math.floor((state.ticks / speed) ** 2)));
+          for (let count = active; count < targetAgents && frontier.length; count += 1) {
+            const picked = Math.floor(random() * frontier.length);
+            const idx = frontier[picked];
+            frontier[picked] = frontier[frontier.length - 1];
+            frontier.pop();
+            spawnAgent(idx, tickTime, false);
+            liveSet.add(idx);
+          }
+
+          if (!frontier.length && !state.agents.some((agent) => !agent.dieAt)) {
+            state.doneAt = tickTime;
+            break;
+          }
+        }
+      }
+
+      function resize() {
+        const rect = canvas.getBoundingClientRect();
+        state.dpr = Math.min(window.devicePixelRatio || 1, 2);
+        state.width = Math.max(1, Math.floor(rect.width));
+        state.height = Math.max(1, Math.floor(rect.height));
+        canvas.width = Math.floor(state.width * state.dpr);
+        canvas.height = Math.floor(state.height * state.dpr);
+        canvas.style.width = `${state.width}px`;
+        canvas.style.height = `${state.height}px`;
+        ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+        const desktop = state.width >= 992;
+        state.centerX = desktop ? 0.66 * state.width : 0.5 * state.width;
+        state.centerY = desktop ? 0.5 * state.height : 0.62 * state.height;
+        state.baseScale = desktop
+          ? 0.58 * Math.min(0.6 * state.width, state.height)
+          : 0.5 * Math.min(0.92 * state.width, 0.62 * state.height);
+        draw(performance.now());
+      }
+
+      function drawGrid(originX, originY, spacing, opacity) {
+        if (spacing < 2 || (state.width / spacing + 2) * (state.height / spacing + 2) > 12000) return;
+        const visible = clamp((spacing - 2) / 7);
+        const alpha = (0.45 + 0.45 * Math.min(1, spacing / 90)) * opacity * visible;
+        if (alpha < 0.01) return;
+        const startX = ((originX + spacing / 2) % spacing + spacing) % spacing;
+        const startY = ((originY + spacing / 2) % spacing + spacing) % spacing;
+        ctx.fillStyle = palette.grid;
+        ctx.globalAlpha = alpha;
+        for (let y = startY; y <= state.height; y += spacing) {
+          for (let x = startX; x <= state.width; x += spacing) {
+            ctx.fillRect(x - 1, y - 1, 2, 2);
+          }
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      function cellPosition(idx, scale) {
+        const unit = scale / 19;
+        return [
+          state.centerX + 2 * unit * (idx % 19 - 9),
+          state.centerY + 2 * unit * (Math.floor(idx / 19) - 9),
+        ];
+      }
+
+      function drawSprite(sprite, x, y, size) {
+        if (size < 0.4) return;
+        ctx.drawImage(sprite, x - size / 2, y - size / 2, size, size);
+      }
+
+      function drawCells(time, scale) {
+        const unit = scale / 19;
+        if (unit < 0.4) return;
+        const size = 2 * unit * 0.78;
+        for (const [idx, born] of state.cells) {
+          const [x, y] = cellPosition(idx, scale);
+          const spriteSet = tileSprites[idx % tileSprites.length];
+          const age = time - born;
+          if (age < 700) {
+            const frame = Math.min(7, Math.max(0, Math.floor(age / 700 * 8)));
+            drawSprite(spriteSet.flip[frame], x, y, size);
+          } else {
+            if (age < 2300) drawSprite(pickMipMap(spriteSet.full, size * state.dpr), x, y, size);
+            const solidAlpha = clamp((age - 700) / 1600);
+            if (solidAlpha > 0) {
+              ctx.globalAlpha = solidAlpha;
+              drawSprite(spriteSet.solid, x, y, size);
+              ctx.globalAlpha = 1;
+            }
+          }
+        }
+      }
+
+      function drawAgents(time, scale) {
+        const unit = scale / 19;
+        if (unit < 0.4) return;
+        for (const agent of state.agents) {
+          const travel = easeOutCubic((time - agent.since) / 450);
+          const [fromX, fromY] = cellPosition(agent.prev, scale);
+          const [toX, toY] = cellPosition(agent.idx, scale);
+          const x = fromX + (toX - fromX) * travel;
+          const y = fromY + (toY - fromY) * travel;
+          let alpha = 1;
+          if (agent.dieAt) alpha = Math.pow(1 - clamp((time - agent.dieAt) / 350), 2);
+          else alpha = 1 - Math.pow(1 - clamp((time - agent.bornAt) / 350), 3);
+          if (alpha <= 0) continue;
+          ctx.globalAlpha = alpha;
+          drawSprite(pickMipMap(agentSprite, 2 * unit * 0.78 * state.dpr), x, y, 2 * unit * 0.78);
+          ctx.globalAlpha = 1;
+        }
+      }
+
+      function updateZoom(time) {
+        const filled = clamp(state.cells.size / totalReachable);
+        const phaseTarget = -0.04 + 0.34 * filled;
+        const target = (state.cycle + (state.doneAt ? 1 : phaseTarget)) * zoomSpan;
+        const elapsed = state.lastFrameTime ? Math.min(50, time - state.lastFrameTime) : 16;
+        state.lastFrameTime = time;
+        const steps = Math.max(1, Math.ceil(elapsed / 12));
+        const step = elapsed / steps;
+        for (let i = 0; i < steps; i += 1) {
+          const force = 0.00000081 * (target - state.zoom) - 0.00153 * state.zoomVelocity;
+          state.zoomVelocity += force * step;
+          state.zoom += state.zoomVelocity * step;
+        }
+      }
+
+      function normalizeCycleWindow() {
+        if (state.cycle < 24) return;
+        const shift = 12;
+        state.cycle -= shift;
+        state.zoom -= shift * zoomSpan;
+      }
+
+      function draw(time = performance.now()) {
+        ctx.clearRect(0, 0, state.width, state.height);
+        ctx.fillStyle = palette.paper;
+        ctx.fillRect(0, 0, state.width, state.height);
+        updateZoom(time);
+        const scale = state.baseScale * Math.exp(state.cycle * zoomSpan - state.zoom);
+        const spacing = scale / 19 * 2;
+        drawGrid(state.centerX, state.centerY, spacing, 1);
+        drawGrid(state.centerX, state.centerY, 0.78 * spacing / 19, 1);
+        drawCells(time, scale);
+        drawAgents(time, scale);
+      }
+
+      function loop(time) {
+        advanceGrowth(time);
+        if (state.doneAt && time - state.doneAt >= 500) {
+          state.cycle += 1;
+          normalizeCycleWindow();
+          resetAnimation(time, false, false);
+        }
+        draw(time);
+        if (state.running) {
+          state.raf = requestAnimationFrame(loop);
+        }
+      }
+
+      window.addEventListener("resize", resize, { passive: true });
+
+      renderSwitcher();
+      applyTheme(activeTheme.id, false);
+      resize();
+      resetAnimation(performance.now(), false);
+      state.raf = requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>
