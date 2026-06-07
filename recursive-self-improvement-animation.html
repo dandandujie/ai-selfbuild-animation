@@ -440,6 +440,30 @@ window.AI_SELFBUILD_MAP_DATA = {
         "Mountain View": { dx: 26, dy: 1 },
         "Palo Alto": { dx: 26, dy: 18 },
       };
+      const CHINA_TERRITORIAL_HIGHLIGHTS = {
+        taiwan: { lat: 23.75, lon: 120.95, latRadius: 2.05, lonRadius: 0.58, tilt: -0.22 },
+        southChinaSeaDashes: [
+          [[109.5176, 16.3605], [109.7234, 16.0559], [109.8780, 15.7668], [109.9651, 15.5260], [109.9853, 15.3356]],
+          [[110.4833, 12.4314], [110.4824, 12.0858], [110.4514, 11.8638], [110.2565, 11.3936]],
+          [[108.3389, 7.2666], [108.3073, 6.7278], [108.3563, 6.1126]],
+          [[111.9411, 3.5536], [112.4015, 3.6464], [112.9210, 3.8451]],
+          [[115.6908, 7.2902], [116.4095, 8.1380]],
+          [[118.6350, 11.0809], [118.8559, 11.4579], [119.1013, 12.0628], [119.1218, 12.1356]],
+          [[119.6081, 18.1435], [119.9108, 18.7719], [120.1192, 19.1177]],
+          [[121.4059, 20.8002], [122.1222, 21.7161]],
+          [[122.8033, 23.6655], [123.0048, 24.7493]],
+          [[119.1684, 15.1074], [119.1698, 15.7550], [119.1782, 16.2657]],
+        ],
+        southChinaSeaFeatures: [
+          { lat: 20.70, lon: 116.72, size: 3.1 },
+          { lat: 16.83, lon: 112.33, size: 3.8 },
+          { lat: 15.80, lon: 114.20, size: 2.8 },
+          { lat: 15.14, lon: 117.77, size: 2.7 },
+          { lat: 10.38, lon: 114.37, size: 3.2 },
+          { lat: 9.55, lon: 112.88, size: 2.8 },
+          { lat: 3.97, lon: 112.28, size: 2.4 },
+        ],
+      };
 
       function mulberry32(seed) {
         return function random() {
@@ -702,6 +726,77 @@ window.AI_SELFBUILD_MAP_DATA = {
           if (!projected) continue;
           ctx.globalAlpha = 0.82 * projected.edgeFade;
           ctx.fillRect(Math.round(projected.x) - 1, Math.round(projected.y) - 1, outlineSize, outlineSize);
+        }
+        if (location.country === "China") {
+          drawChinaTerritorialHighlights(layout, color, time);
+        }
+        ctx.restore();
+      }
+
+      function drawChinaTerritorialHighlights(layout, color, time) {
+        drawTaiwanHighlight(layout, color, time);
+        drawSouthChinaSeaHighlight(layout, color, time);
+      }
+
+      function drawTaiwanHighlight(layout, color, time) {
+        const island = CHINA_TERRITORIAL_HIGHLIGHTS.taiwan;
+        ctx.save();
+        ctx.fillStyle = color;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 9;
+        for (let row = -5; row <= 5; row += 1) {
+          for (let col = -3; col <= 3; col += 1) {
+            const x = col / 3;
+            const y = row / 5;
+            if (x * x + y * y > 1) continue;
+            const lat = island.lat + y * island.latRadius + x * island.tilt;
+            const lon = island.lon + x * island.lonRadius - y * island.tilt;
+            const projected = projectMapPoint(lat, lon, layout);
+            if (!projected) continue;
+            const pulse = 0.95 + Math.sin(time * 0.0017 + row * 0.6 + col) * 0.05;
+            ctx.globalAlpha = 0.72 * pulse * projected.edgeFade;
+            ctx.fillRect(Math.round(projected.x) - 1, Math.round(projected.y) - 1, 2.5, 2.5);
+          }
+        }
+        ctx.restore();
+      }
+
+      function drawSouthChinaSeaHighlight(layout, color, time) {
+        const territory = CHINA_TERRITORIAL_HIGHLIGHTS;
+        ctx.save();
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 8;
+        ctx.lineWidth = state.width >= 992 ? 1.45 : 1.1;
+        ctx.setLineDash([]);
+        for (const dash of territory.southChinaSeaDashes) {
+          let drawing = false;
+          ctx.beginPath();
+          for (const [lon, lat] of dash) {
+            const projected = projectMapPoint(lat, lon, layout);
+            if (!projected) {
+              drawing = false;
+              continue;
+            }
+            ctx.globalAlpha = 0.62 * projected.edgeFade;
+            if (!drawing) {
+              ctx.moveTo(projected.x, projected.y);
+              drawing = true;
+            } else {
+              ctx.lineTo(projected.x, projected.y);
+            }
+          }
+          ctx.stroke();
+        }
+
+        for (const island of territory.southChinaSeaFeatures) {
+          const projected = projectMapPoint(island.lat, island.lon, layout);
+          if (!projected) continue;
+          const pulse = 0.86 + Math.sin(time * 0.002 + island.lat) * 0.14;
+          const size = island.size * pulse;
+          ctx.globalAlpha = 0.84 * projected.edgeFade;
+          ctx.fillRect(Math.round(projected.x - size / 2), Math.round(projected.y - size / 2), size, size);
         }
         ctx.restore();
       }
